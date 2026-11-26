@@ -24,10 +24,11 @@ along with this program; see the file COPYING. If not, see
  *
  * Modified in 2026 by BlackBearReloaded from launch_app() in shsrv's
  * bundles/launch/launch.c (https://github.com/ps5-payload-dev/shsrv):
- * reduced to a single compile-time title ID with no console output.
+ * reduced to a single compile-time title ID with bounded API result logging.
  */
 
 #include <stdint.h>
+#include <ps5/klog.h>
 
 #ifndef BOOTSTRAP_TITLE_ID
 #error BOOTSTRAP_TITLE_ID must be defined
@@ -46,15 +47,23 @@ int sceSystemServiceLaunchApp(const char *, char **, launch_context_t *);
 
 int main(void)
 {
-    launch_context_t context = {.size = sizeof(launch_context_t)};
+    // A foreign process needs Skip Launch Check to start the registered title.
+    launch_context_t context = {.size = sizeof(launch_context_t), .flags = 1};
     char *args[] = {0};
     int rc;
 
-    if (sceUserServiceInitialize(0) != 0)
+    klog_printf("[launch] title=%s\n", BOOTSTRAP_TITLE_ID);
+    rc = sceUserServiceInitialize(0);
+    klog_printf("[launch] sceUserServiceInitialize rc=0x%08x\n", (unsigned int)rc);
+    if (rc != 0)
         return 1;
     rc = sceUserServiceGetForegroundUser(&context.user_id);
+    klog_printf("[launch] sceUserServiceGetForegroundUser rc=0x%08x\n", (unsigned int)rc);
     if (rc == 0)
+    {
         rc = sceSystemServiceLaunchApp(BOOTSTRAP_TITLE_ID, args, &context);
+        klog_printf("[launch] sceSystemServiceLaunchApp rc=0x%08x\n", (unsigned int)rc);
+    }
     sceUserServiceTerminate();
     return rc < 0;
 }

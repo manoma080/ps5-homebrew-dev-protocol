@@ -42,7 +42,8 @@ mkdir -p "$output_dir"
 output="$output_dir/${mode}-${title}.elf"
 libraries=(-lSceSystemService)
 if [[ $mode == launch ]]; then
-    libraries+=(-lSceUserService)
+    # The injected cleanup needs sceKernelDlsym, not the weak kernel substitute.
+    libraries+=(-Wl,--no-as-needed -lSceUserService -lkernel)
 fi
 
 "$sdk/bin/prospero-clang" -Wall -Werror \

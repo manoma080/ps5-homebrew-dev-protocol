@@ -19,8 +19,13 @@ payload targets exactly one title and accepts no input from the network.
 1. `sceUserServiceInitialize`
 2. `sceUserServiceGetForegroundUser` — the app starts for the signed-in user
    currently in front of the console
-3. `sceSystemServiceLaunchApp(title_id, argv, &context)`
+3. `sceSystemServiceLaunchApp(title_id, argv, &context)` with Skip Launch Check,
+   because the request comes from the helper rather than the registered title
 4. `sceUserServiceTerminate`
+
+The controller logs each API result to the kernel log. It explicitly loads
+`libkernel.sprx` so the SDK can resolve `sceKernelDlsym` and return from an
+injected process instead of falling into its unsupported-exit trap.
 
 The title must already be installed or registered (for example by ShadowMount
 Plus). Launching an unregistered title fails.
